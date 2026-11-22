@@ -1,5 +1,6 @@
 // HDRDisplayCalibrate — SDR/HDR display calibration for Windows.
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
+// Modified 2026 by DMD61 (Victory61): the log starts again when it grows above 5 MB (old one kept as log.old.txt).
 using System;
 using System.IO;
 using System.Text;
@@ -28,10 +29,26 @@ namespace HDRDisplayCalibrate.Core
     {
         public static event Action<string> Line;
         static readonly object Gate = new();
+        static bool _checked;
+        const long MaxBytes = 5 * 1024 * 1024;
+
+        /// <summary>DMD61: once per run, a log above 5 MB becomes log.old.txt (replacing the previous one) and a new log starts.</summary>
+        static void Rotate(string file)
+        {
+            _checked = true;
+            try
+            {
+                var fi = new FileInfo(file);
+                if (fi.Exists && fi.Length > MaxBytes) File.Move(file, Path.Combine(Paths.Home, "log.old.txt"), true);
+            }
+            catch { }
+        }
+
         public static void Write(string msg)
         {
             var s = $"{DateTime.Now:HH:mm:ss}  {msg}";
-            lock (Gate) try { File.AppendAllText(Path.Combine(Paths.Home, "log.txt"), $"{DateTime.Now:yyyy-MM-dd} {s}\n", Encoding.UTF8); } catch { }
+            var file = Path.Combine(Paths.Home, "log.txt");
+            lock (Gate) try { if (!_checked) Rotate(file); File.AppendAllText(file, $"{DateTime.Now:yyyy-MM-dd} {s}\n", Encoding.UTF8); } catch { }
             Line?.Invoke(s);
         }
     }

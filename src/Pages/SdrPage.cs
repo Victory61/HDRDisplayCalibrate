@@ -1,7 +1,9 @@
 // HDRDisplayCalibrate — SDR/HDR display calibration for Windows.
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
 // Modified 2026 by DMD61 (Victory61): the page switches Windows HDR off by itself (SDR calibration needs it off);
-// guided sensor dialogs (place / remove, room light).
+// guided sensor dialogs (place / remove, room light); version 11: Medium quality and 250 patches by default with the
+// estimated time shown, notice about the Windows firewall question, clearer brightness question (no DDC/CI, sensor back
+// in place before the measurement goes on).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -19,14 +21,15 @@ namespace HDRDisplayCalibrate.Pages
         readonly WhitePicker _wp = new();
         readonly TextBox _nits = Ui.Box("120");
         readonly ComboBox _curve = Ui.Combo(new[] { S.T("Gamma 2.2 (PC, games)", "Гамма 2.2 (ПК, ігри)"), S.T("Gamma 2.4 (dark room)", "Гамма 2.4 (темна кімната)"), "BT.1886 (TV, video)", "sRGB", "L*" });
-        readonly ComboBox _quality = Ui.Combo(new[] { S.T("Fast", "Швидко"), S.T("Medium", "Середньо"), S.T("High (slow)", "Висока (довго)") }, 2);
-        readonly ComboBox _patches = Ui.Combo(new[] { S.T("No profile (calibration only)", "Без профілю (лише калібрування)"), "120", "250", "400", "600", "1000", "2000" }, 4);
+        readonly ComboBox _quality = Ui.Combo(new[] { S.T("Fast", "Швидко"), S.T("Medium", "Середньо"), S.T("High (slow)", "Висока (довго)") }, 1);
+        readonly ComboBox _patches = Ui.Combo(new[] { S.T("No profile (calibration only)", "Без профілю (лише калібрування)"), "120", "250", "400", "600", "1000", "2000" }, 2);
         readonly ComboBox _ptype = Ui.Combo(new[] { S.T("XYZ LUT + matrix (best)", "XYZ LUT + матриця (найкраще)"), S.T("Matrix / shaper (simple)", "Матриця / шейпер (простий)") });
         readonly CheckBox _ambient = Ui.Check(S.T("Adjust tone curve to room light (CIECAM02, dispcal -a)", "Підлаштувати криву під освітлення кімнати (CIECAM02, dispcal -a)"), tip: S.T("Adapts the tone curve to how bright the room is (CIECAM02 viewing conditions). Useful when the room is much darker or brighter than a typical office.", "Підлаштовує тонову криву під яскравість кімнати (умови перегляду CIECAM02). Корисно, коли кімната значно темніша чи світліша за звичайний офіс."));
         readonly TextBox _lux = Ui.Box("");
         readonly CheckBox _install = Ui.Check(S.T("Install the profile for this display", "Встановити профіль для цього дисплея"), true, tip: S.T("When the profile is ready, installs it and makes it the default for this display.", "Коли профіль готовий, встановлює його й робить основним для цього дисплея."));
         readonly CheckBox _verify = Ui.Check(S.T("Verify afterwards (120 patches)", "Перевірити після (120 патчів)"), true, tip: S.T("Measures 120 patches with the new profile and shows the final accuracy.", "Міряє 120 патчів із новим профілем і показує підсумкову точність."));
         readonly TextBox _name = Ui.Box("", 360);
+        readonly TextBlock _eta = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 6) };   // DMD61
         readonly StackPanel _result = new();
 
         static readonly string[][] CurveArgs = { new[] { "-g2.2" }, new[] { "-g2.4" }, new[] { "-G2.4", "-f0" }, new[] { "-gs" }, new[] { "-gl" } };
@@ -40,7 +43,7 @@ namespace HDRDisplayCalibrate.Pages
                 S.T("Let the monitor warm up for about 30 minutes. In its menu turn off dynamic contrast, eco and other automatic picture modes.", "Дайте монітору прогрітися близько 30 хвилин. У його меню вимкніть динамічний контраст, еко та інші автоматичні режими картинки."),
                 S.T("Hang the sensor in the centre of this screen with the diffuser open. Windows HDR must be off for this display.", "Повісьте датчик по центру цього екрана, розсіювач відкритий. Windows HDR для цього дисплея має бути вимкнений."),
                 S.T("If the monitor has RGB controls, get close to the target white first: Live meter → Auto OSD, or by hand.", "Якщо в моніторі є RGB-регулятори, спершу наблизьтесь до цільового білого: «Живий замір» → «Авто-OSD» або вручну."),
-                S.T("Choose the targets below and press Start calibration (about 1–1.5 h at high quality and 600 patches). Esc cancels at any time.", "Виберіть цілі нижче й натисніть «Почати калібрування» (близько 1–1,5 год на високій якості і 600 патчах). Esc скасовує будь-коли."),
+                S.T("Choose the targets below and press Start calibration. The estimated time is shown above the button: Medium quality and 250 patches take about half an hour, High quality and 600 patches more than an hour. Esc cancels at any time.", "Виберіть цілі нижче й натисніть «Почати калібрування». Орієнтовний час показано над кнопкою: середня якість і 250 патчів — близько пів години, висока якість і 600 патчів — понад годину. Esc скасовує будь-коли."),
                 S.T("When the app asks, open Settings → Display → Color management and press “Set profile” for the new profile: Windows loads the calibration of the profile chosen there, also after a restart.", "Коли програма попросить, відкрийте Параметри → Дисплей → Керування кольором і натисніть «Установити профіль» для нового профілю: Windows завантажує калібрування профілю, вибраного саме там, і після перезавантаження теж."),
                 S.T("Check the result on Verify & report.", "Перевірте результат на сторінці «Перевірка і звіт».")));
             Body.Children.Add(Ui.Card(Ui.H2(S.T("Targets", "Цілі")),
@@ -54,11 +57,39 @@ namespace HDRDisplayCalibrate.Pages
                 Ui.Field(S.T("Profile patches", "Патчів у профілі"), _patches, S.T("~3–15 s per patch depending on the instrument and darkness", "~3–15 с на патч залежно від датчика й темряви"), tip: S.T("Number of colour patches for the ICC profile. More patches describe the display more precisely but take longer (~3–15 s each).", "Кількість кольорових патчів для ICC-профілю. Більше патчів — точніший опис дисплея, але довше (~3–15 с кожен).")),
                 Ui.Field(S.T("Profile type", "Тип профілю"), _ptype, tip: S.T("XYZ LUT + matrix describes the display most precisely; matrix / shaper is simpler and works with more apps.", "XYZ LUT + матриця описує дисплей найточніше; матриця / шейпер простіший і працює з більшою кількістю програм.")),
                 Ui.Field(S.T("Name", "Назва"), _name, S.T("Empty = display name and date", "Порожньо = назва дисплея і дата"), tip: S.T("File name for the calibration and the profile.", "Назва файлів калібрування та профілю.")),
-                _install, _verify,
+                _install, _verify, _eta,
                 Ui.Row(Ui.Btn(S.T("Start calibration", "Почати калібрування"), Run, true, "", tip: S.T("Runs the calibration and profiling. Keep the sensor on the screen; Esc cancels.", "Запускає калібрування і профілювання. Датчик має бути на екрані; Esc скасовує.")))));
             Body.Children.Add(_result);
+            // DMD61: estimated duration, updated with the choices
+            _quality.SelectionChanged += (_, _) => UpdateEta(); _patches.SelectionChanged += (_, _) => UpdateEta();
+            _verify.Checked += (_, _) => UpdateEta(); _verify.Unchecked += (_, _) => UpdateEta();
+            UpdateEta();
             var rl = St.Cfg.Num("room_lux", double.NaN);
             if (!double.IsNaN(rl)) _lux.Text = rl.ToString("0.#", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>DMD61: rough duration (about 4 s per reading with an i1Display-class probe, longer on dark patches).</summary>
+        void UpdateEta()
+        {
+            int cal = new[] { 60, 150, 420 }[Math.Max(0, _quality.SelectedIndex)];
+            int npatch = _patches.SelectedIndex <= 0 ? 0 : int.Parse((string)_patches.SelectedItem);
+            int ver = _verify.IsChecked == true ? 120 : 0;
+            double min = (cal + npatch + ver) * 4.0 / 60;
+            _eta.Text = S.F("Estimated time: about {0:F0} minutes (calibration, profile and verification). Dark patches take longer; the progress is shown at the bottom of the measurement screen.",
+                            "Орієнтовний час: близько {0:F0} хв (калібрування, профіль і перевірка). Темні патчі міряються довше; хід заміру видно внизу екрана заміру.", Math.Round(min / 5) * 5);
+        }
+
+        /// <summary>DMD61: Argyll's patch server listens on the network, so Windows may ask about the firewall once per tool.
+        /// The question appears in the middle of the screen, under the sensor: say it before, once.</summary>
+        bool FirewallNotice()
+        {
+            if (!St.Setup.OwnWindow || St.Cfg.Bool("firewall_notice_shown", false)) return true;
+            var r = MessageBox.Show(S.T("During the measurement Windows may ask whether \"dispcal\" or \"dispread\" (ArgyllCMS) may communicate on networks. ArgyllCMS uses this connection only to talk to this program on the same PC, so the measurement works with either answer: you can press Cancel.\n\nThe question appears in the middle of the screen: move the sensor aside to answer, then put it back in the centre. This notice is shown only once.",
+                                        "Під час заміру Windows може запитати, чи можна «dispcal» або «dispread» (ArgyllCMS) працювати в мережі. ArgyllCMS використовує це з'єднання лише для зв'язку з цією програмою на тому самому ПК, тож замір працює за будь-якої відповіді: можна натиснути «Скасувати».\n\nЗапитання з'являється посередині екрана: відсуньте датчик, щоб відповісти, потім поверніть його в центр. Це повідомлення показується лише раз."),
+                                    "HDRDisplayCalibrate", MessageBoxButton.OKCancel, MessageBoxImage.Information);
+            if (r != MessageBoxResult.OK) return false;
+            St.Cfg.Set("firewall_notice_shown", true); St.Cfg.Save();
+            return true;
         }
 
         bool _switching;
@@ -111,6 +142,7 @@ namespace HDRDisplayCalibrate.Pages
             string name = string.IsNullOrWhiteSpace(_name.Text) ? $"{d.Model}_{DateTime.Now:yyyy-MM-dd}" : _name.Text.Trim();
             name = string.Join("_", name.Split(Path.GetInvalidFileNameChars())).Replace(' ', '_');
             int npatch = _patches.SelectedIndex == 0 ? 0 : int.Parse((string)_patches.SelectedItem);
+            if (!FirewallNotice()) return;   // DMD61
             if (!ProbeGuide.Ask(ProbeGuide.Mode.Place)) return;   // DMD61: where and how to place the sensor
             RunJob(async ct =>
             {
@@ -127,28 +159,51 @@ namespace HDRDisplayCalibrate.Pages
                 // otherwise dispcal keeps chasing it for hours and the white point suffers
                 if (!double.IsNaN(nits) && St.Setup.OwnWindow)
                 {
-                    double native;
-                    using (var rd = new Jobs.LiveReader(fast: true)) native = (await rd.Read(1, 1, 1, ct)).Y;
-                    double reach = native * 0.95;
-                    if (nits > reach)
+                    bool hasDdc; using (var t = Ddc.Open(d)) hasDdc = t?.Get(Ddc.Brightness) != null;   // DMD61
+                    bool asked = false;
+                    for (int tries = 0; tries < 5; tries++)
                     {
-                        var ans = MessageBox.Show(S.F("At the current monitor brightness white reaches {0:F0} cd/m²; after the white point correction about {1:F0} cd/m² remain, below the target of {2:F0} cd/m².\n\nYes: raise the monitor's own brightness over DDC/CI\nNo: calibrate to {1:F0} cd/m²\nCancel: stop",
-                                                      "На поточній яскравості монітора білий дає {0:F0} кд/м²; після корекції точки білого залишиться близько {1:F0} кд/м², менше за ціль {2:F0} кд/м².\n\nТак: підняти яскравість самого монітора через DDC/CI\nНі: калібрувати на {1:F0} кд/м²\nСкасувати: зупинити", native, reach, nits),
+                        double native;
+                        using (var rd = new Jobs.LiveReader(fast: true)) native = (await rd.Read(1, 1, 1, ct)).Y;
+                        double reach = native * 0.95;
+                        if (nits <= reach) break;
+                        asked = true;
+                        // DMD61: the message appears in the middle of the screen, where the sensor is
+                        string head = S.F("At the current monitor brightness white reaches {0:F0} cd/m²; after the white point correction about {1:F0} cd/m² remain, below the target of {2:F0} cd/m².",
+                                          "На поточній яскравості монітора білий дає {0:F0} кд/м²; після корекції точки білого залишиться близько {1:F0} кд/м², менше за ціль {2:F0} кд/м².", native, reach, nits)
+                                      + "\n\n" + S.T("(Move the sensor aside to read this; the program will ask you to put it back before it goes on.)", "(Відсуньте датчик, щоб прочитати; програма попросить повернути його, перш ніж продовжити.)");
+                        MessageBoxResult ans;
+                        if (hasDdc)
+                            ans = MessageBox.Show(head + "\n\n" + S.F("Yes: raise the monitor's own brightness over DDC/CI\nNo: calibrate to {0:F0} cd/m²\nCancel: stop", "Так: підняти яскравість самого монітора через DDC/CI\nНі: калібрувати на {0:F0} кд/м²\nСкасувати: зупинити", reach),
+                                                  "HDRDisplayCalibrate", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                        else
+                            ans = MessageBox.Show(head + "\n\n" + S.T("The program cannot change the brightness of this screen (no DDC/CI).", "Програма не може змінити яскравість цього екрана (немає DDC/CI).") + "\n\n"
+                                                  + S.F("Yes: I raised the brightness myself (keyboard keys, Windows settings or the monitor buttons): measure again\nNo: calibrate to {0:F0} cd/m² (a small difference is not visible)\nCancel: stop",
+                                                        "Так: я сам підняв яскравість (клавіші, параметри Windows або кнопки монітора): поміряти ще раз\nНі: калібрувати на {0:F0} кд/м² (невелика різниця непомітна)\nСкасувати: зупинити", reach),
                                                   "HDRDisplayCalibrate", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
                         if (ans == MessageBoxResult.Cancel) throw new OperationCanceledException();
-                        if (ans == MessageBoxResult.Yes)
+                        if (ans == MessageBoxResult.No)
+                        {
+                            int bi = a.FindIndex(x => x.StartsWith("-b"));
+                            a[bi] = string.Format(CultureInfo.InvariantCulture, "-b{0:0}", Math.Floor(reach));
+                            break;
+                        }
+                        if (!Dispatcher.Invoke(() => ProbeGuide.Ask(ProbeGuide.Mode.Check, S.T("Put the sensor back in the centre of the screen if you moved it.", "Поверніть датчик у центр екрана, якщо ви його відсунули."))))
+                            throw new OperationCanceledException();
+                        asked = false;
+                        if (hasDdc)
                         {
                             St.Report(S.T("Raising monitor brightness…", "Піднімаю яскравість монітора…"));
                             var res = await Jobs.AutoOsd(d, null, nits / 0.95, dir, ct);
                             Log.Write("brightness for calibration: " + res);
                             if (St.Setup.OwnWindow) Argyll.LutLinear(disp);
+                            break;
                         }
-                        else
-                        {
-                            int bi = a.FindIndex(x => x.StartsWith("-b"));
-                            a[bi] = string.Format(CultureInfo.InvariantCulture, "-b{0:0}", Math.Floor(reach));
-                        }
+                        // no DDC/CI: the user raised it by hand, measure again
                     }
+                    // DMD61: after an answer the sensor may have been moved: wait until it is back
+                    if (asked && !Dispatcher.Invoke(() => ProbeGuide.Ask(ProbeGuide.Mode.Check, S.T("Put the sensor back in the centre of the screen if you moved it.", "Поверніть датчик у центр екрана, якщо ви його відсунули."))))
+                        throw new OperationCanceledException();
                 }
                 var (code, outp) = await Jobs.RunMeasuring("dispcal", a, dir, S.T("Calibration", "Калібрування"), ct);
                 if (code != 0) throw new Exception(Jobs.LastError(outp) ?? "dispcal failed");

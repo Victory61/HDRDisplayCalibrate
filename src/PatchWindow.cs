@@ -11,6 +11,9 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using HDRDisplayCalibrate.Core;
 
+// Modified 2026 by DMD61 (Victory61): status line at the bottom edge during measurements (stage, patch, time left)
+// and a note on dark patches, so a long reading is not taken for a hang.
+
 namespace HDRDisplayCalibrate
 {
     /// <summary>
@@ -22,6 +25,10 @@ namespace HDRDisplayCalibrate
     {
         readonly Border _patch = new() { Background = Brushes.Gray };
         readonly TextBlock _hint = new() { Foreground = new SolidColorBrush(Color.FromArgb(150, 255, 255, 255)), FontSize = 12, Margin = new Thickness(10), VerticalAlignment = VerticalAlignment.Bottom, TextWrapping = TextWrapping.Wrap };
+        // DMD61: small and dim, at the bottom edge, far from the sensor in the centre
+        readonly TextBlock _status = new() { Foreground = new SolidColorBrush(Color.FromArgb(200, 128, 128, 128)), FontSize = 14, Margin = new Thickness(16, 10, 16, 12), VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Left, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+        string _statusLine = "";
+        bool _dark;
         readonly bool _fullscreen;
         readonly DisplayTarget _d;
         readonly Settings _s;
@@ -38,7 +45,7 @@ namespace HDRDisplayCalibrate
             WindowStyle = WindowStyle.None; ResizeMode = fullscreen ? ResizeMode.NoResize : ResizeMode.CanResizeWithGrip;
             Topmost = true; ShowInTaskbar = false; Background = Brushes.Black; Title = "HDRDisplayCalibrate patches";
             WindowStartupLocation = WindowStartupLocation.Manual; Left = -32000; Top = -32000; Width = 200; Height = 200;
-            var g = new Grid(); g.Children.Add(_patch); g.Children.Add(_hint); Content = g;
+            var g = new Grid(); g.Children.Add(_patch); g.Children.Add(_hint); g.Children.Add(_status); Content = g;
             _hint.Text = fullscreen ? "" : S.T("Drag to move · drag the corner to resize · put the sensor in the middle", "Тягніть, щоб перемістити · кут — змінити розмір · датчик по центру");
             SourceInitialized += (_, _) => Place();
             MouseLeftButtonDown += (_, e) => { if (!_fullscreen && e.ButtonState == MouseButtonState.Pressed) DragMove(); };
@@ -67,7 +74,24 @@ namespace HDRDisplayCalibrate
             _s.Set(key + "_x", r.l); _s.Set(key + "_y", r.t); _s.Set(key + "_w", r.r - r.l); _s.Set(key + "_h", r.b - r.t); _s.Save();
         }
 
-        public void Paint(byte r, byte g, byte b) { _patch.Background = new SolidColorBrush(Color.FromRgb(r, g, b)); _hint.Visibility = Visibility.Collapsed; }
+        public void Paint(byte r, byte g, byte b)
+        {
+            _patch.Background = new SolidColorBrush(Color.FromRgb(r, g, b)); _hint.Visibility = Visibility.Collapsed;
+            _dark = Math.Max(r, Math.Max(g, b)) < 48; ShowStatus();
+        }
+
+        /// <summary>DMD61: text of the status line (stage, patch, time left); null or empty hides it.</summary>
+        public void SetStatus(string line) { _statusLine = line ?? ""; ShowStatus(); }
+
+        void ShowStatus()
+        {
+            if (_statusLine.Length == 0) { _status.Visibility = Visibility.Collapsed; return; }
+            _status.Text = _statusLine
+                + (_dark ? "  ·  " + S.T("measuring a dark patch…", "замір темного патча…") : "")
+                + "\n" + S.T("Dark patches take longer to measure: this is normal, the program is not stuck. Do not move the sensor. Esc cancels.",
+                             "Темні патчі міряються довше: це нормально, програма не зависла. Не рухайте датчик. Esc скасовує.");
+            _status.Visibility = Visibility.Visible;
+        }
 
         /// <summary>Waits until WPF has rendered the new colour and a couple of display refreshes have passed.</summary>
         public async Task Rendered()

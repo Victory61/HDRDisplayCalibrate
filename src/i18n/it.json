@@ -573,5 +573,20 @@
  "1ddb5d1d": "5. Passaggio da HDR a SDR",
  "5aa1a673": "La calibrazione SDR si fa con l'HDR di Windows spento. Ora il programma lo spegne: il monitor può diventare nero per qualche secondo. Non toccare niente finché lo schermo non torna.",
  "f164f158": "La calibrazione SDR si fa con l'HDR di Windows spento. Ora il programma:\n\n1. spegne l'HDR di Windows: il monitor può diventare nero per qualche secondo;\n2. rimuove la correzione colore HDR che Windows lascia attiva: se Windows chiede il permesso di amministratore, rispondi Sì;\n3. dopo qualche secondo si chiude e si riapre su questa pagina.\n\nNon toccare niente finché la finestra non ricompare.",
- "bf8a930c": "Il registro è ancora vuoto: si riempie mentre il programma lavora."
+ "bf8a930c": "Il registro è ancora vuoto: si riempie mentre il programma lavora.",
+ "e89412e0": "(Sposta la sonda per leggere questo messaggio: prima di proseguire il programma ti chiederà di rimetterla a posto.)",
+ "984a7260": "mancano circa {0:F0} min",
+ "6ef5856b": "Con la luminosità attuale del monitor il bianco arriva a {0:F0} cd/m²; dopo la correzione del punto di bianco ne restano circa {1:F0} cd/m², sotto l'obiettivo di {2:F0} cd/m².",
+ "50c3b22a": "Scegli gli obiettivi qui sotto e premi Avvia calibrazione. Il tempo stimato è indicato sopra il pulsante: qualità Media e 250 patch richiedono circa mezz'ora, qualità Alta e 600 patch più di un'ora. Esc interrompe in qualsiasi momento.",
+ "0d2609e5": "Le patch scure richiedono più tempo: è normale, il programma non è bloccato. Non spostare la sonda. Esc interrompe.",
+ "5ccacc0f": "Durante la misura Windows potrebbe chiedere se consentire a \"dispcal\" o \"dispread\" (ArgyllCMS) di comunicare in rete. ArgyllCMS usa questa connessione solo per parlare con questo programma sullo stesso PC, quindi la misura funziona con qualsiasi risposta: puoi premere Annulla.\n\nLa domanda compare al centro dello schermo: sposta la sonda per rispondere, poi rimettila al centro. Questo avviso compare una sola volta.",
+ "5c8d3ad2": "Tempo stimato: circa {0:F0} minuti (calibrazione, profilo e verifica). Le patch scure richiedono più tempo; l'avanzamento è indicato in basso nella schermata di misura.",
+ "64c13da9": "manca meno di un minuto",
+ "59514ce9": "misura di una patch scura…",
+ "9dee2d55": "passaggio {0} di {1}",
+ "b4992874": "patch {0} di {1}",
+ "dbf7ad5f": "Rimetti la sonda al centro dello schermo, se l'hai spostata.",
+ "6b2c8f0f": "Il programma non può cambiare la luminosità di questo schermo (manca il DDC/CI).",
+ "0b3ee2ed": "Sì: ho alzato io la luminosità (tasti della tastiera, impostazioni di Windows o pulsanti del monitor): misura di nuovo\nNo: calibra a {0:F0} cd/m² (una piccola differenza non si vede)\nAnnulla: interrompi",
+ "181214f1": "Sì: alza la luminosità del monitor tramite DDC/CI\nNo: calibra a {0:F0} cd/m²\nAnnulla: interrompi"
 }

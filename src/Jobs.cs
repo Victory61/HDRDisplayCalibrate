@@ -1,5 +1,7 @@
 // HDRDisplayCalibrate — SDR/HDR display calibration for Windows.
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
+// Modified 2026 by DMD61 (Victory61): room light read from the XYZ result when Argyll prints no lux line;
+// status line with stage, pass, patch and time left on the patch window.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -128,12 +130,42 @@ namespace HDRDisplayCalibrate
             var client = new PatchClient(St.Setup.WebPort);
             client.Color += (r, g, b) => Application.Current.Dispatcher.Invoke(() => win.Paint(r, g, b));
             var feed = Task.Run(() => client.RunAsync(() => Application.Current.Dispatcher.Invoke(() => win.Rendered()), stop.Token));
-            try { return await Argyll.RunAsync(tool, args, dir, stage, Prog(stage), ct); }
+            // DMD61: stage, iteration, patch and time left on the patch window itself (on a single screen it hides the app)
+            var status = Prog(stage);
+            string iter = ""; int passTotal = -1, passFrom = 0; var passStart = DateTime.Now;
+            void Show(string line) => Application.Current.Dispatcher.BeginInvoke(() => win.SetStatus(line));
+            Show(stage + "…");
+            var prog = new Progress<Progress>(p =>
+            {
+                if (p.Done >= 0)
+                {
+                    if (p.Total != passTotal || p.Done < passFrom) { passTotal = p.Total; passFrom = p.Done; passStart = DateTime.Now; }
+                    string left = "";
+                    if (p.Done - passFrom >= 3 && p.Total > p.Done)
+                    {
+                        double sec = (DateTime.Now - passStart).TotalSeconds / (p.Done - passFrom) * (p.Total - p.Done);
+                        left = "  ·  " + (sec < 60 ? S.T("less than a minute left", "залишилося менше хвилини") : S.F("about {0:F0} min left", "залишилося близько {0:F0} хв", Math.Ceiling(sec / 60)));
+                    }
+                    var line = stage + iter + "  ·  " + S.F("patch {0} of {1}", "патч {0} з {1}", p.Done, p.Total) + left;
+                    Show(line);
+                    St.Report(line, p.Total > 0 ? p.Done / (double)p.Total : -1);
+                    return;
+                }
+                var it = p.Line == null ? Match.Empty : Regex.Match(p.Line, @"iteration (\d+)/(\d+)", RegexOptions.IgnoreCase);
+                if (it.Success)
+                {
+                    iter = "  ·  " + S.F("pass {0} of {1}", "прохід {0} з {1}", it.Groups[1].Value, it.Groups[2].Value);
+                    Show(stage + iter);
+                }
+                status.Report(p);
+            });
+            try { return await Argyll.RunAsync(tool, args, dir, stage, prog, ct); }
             finally
             {
                 stop.Cancel();
                 try { await feed; } catch { }
                 if (own) await Application.Current.Dispatcher.InvokeAsync(() => win.Close());
+                else await Application.Current.Dispatcher.InvokeAsync(() => win.SetStatus(null));
             }
         }
 
@@ -158,8 +190,18 @@ namespace HDRDisplayCalibrate
             var (_, outp) = await Argyll.RunAsync("spotread", new[] { $"-c{St.Setup.Instrument}", "-a", "-x", "-T", "-O" }, Path.GetTempPath(), "ambient", null, ct, "\n\n");
             var lux = Regex.Match(outp, @"Ambient = ([\d.]+) Lux");
             var cct = Regex.Match(outp, @"CCT = ([\d.]+)K");
-            if (!lux.Success) throw new Exception(LastError(outp) ?? S.T("No ambient reading (is the diffuser over the lens?)", "Немає заміру освітлення (розсіювач на лінзі?)"));
-            return (double.Parse(lux.Groups[1].Value, Inv), cct.Success ? double.Parse(cct.Groups[1].Value, Inv) : 0);
+            if (lux.Success) return (double.Parse(lux.Groups[1].Value, Inv), cct.Success ? double.Parse(cct.Groups[1].Value, Inv) : 0);
+            // DMD61: with the diffuser not over the lens Argyll says "wrong position" but may still print a (wrong) reading
+            if (outp.Contains("wrong position", StringComparison.OrdinalIgnoreCase))
+                throw new Exception(S.T("No ambient reading (is the diffuser over the lens?)", "Немає заміру освітлення (розсіювач на лінзі?)"));
+            // DMD61: some ArgyllCMS builds print only "Result is XYZ: X Y Z" in ambient mode; there Y = lux / π
+            var xyz = Regex.Match(outp, @"Result is XYZ:\s*([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)");
+            if (xyz.Success)
+            {
+                var v = new V3(double.Parse(xyz.Groups[1].Value, Inv), double.Parse(xyz.Groups[2].Value, Inv), double.Parse(xyz.Groups[3].Value, Inv));
+                if (v.Y > 0) return (v.Y * Math.PI, cct.Success ? double.Parse(cct.Groups[1].Value, Inv) : Cm.Cct(v));
+            }
+            throw new Exception(LastError(outp) ?? S.T("No ambient reading (is the diffuser over the lens?)", "Немає заміру освітлення (розсіювач на лінзі?)"));
         }
 
         /// <summary>Standard verification chart: greys, ramps and a spread of colours.</summary>

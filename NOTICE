@@ -51,3 +51,10 @@ Modifications by DMD61 (Victory61), 2026:
   width and shows the end of the log file at once (src/Charts.cs, Pages/HdrPage.cs, Pages/ProfilesPage.cs).
 - Version 10 = 0.3.0-DMD61.10: the ArgyllCMS card on the Display & probe page is hidden when ArgyllCMS is bundled
   with the app; it appears only when the bin folder has to be set by hand (src/Pages/DevicePage.cs).
+- Version 11 = 0.3.0-DMD61.11: the room light is also read when ArgyllCMS prints only the XYZ result (lux = Y × π),
+  and a reading with the diffuser in the wrong position is refused (src/Jobs.cs); the measurement screen shows the
+  stage, pass, patch and time left at its bottom edge, with a note that dark patches take longer (src/PatchWindow.cs,
+  Jobs.cs); SDR calibration defaults to Medium quality and 250 patches and shows the estimated time; a one-time notice
+  about the Windows firewall question asked for ArgyllCMS; the brightness question no longer offers DDC/CI when the
+  screen has none, and the sensor is put back in place before the measurement goes on (src/Pages/SdrPage.cs); the log
+  starts again above 5 MB, the old one kept as log.old.txt (src/Core/Log.cs); Italian strings (src/i18n/it.json).
