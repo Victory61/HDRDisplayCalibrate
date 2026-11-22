@@ -79,3 +79,5 @@ Modifications by DMD61 (Victory61), 2026:
   automatically at the end, as in the HDR calibration; one measurement screen from the first patch to the last (the
   desktop no longer shows between the phases), dark grey with a note while the profile is built; button renamed
   "Measure ambient light" (src/Pages/SdrPage.cs); Italian strings (src/i18n/it.json).
+- Version 14 = 0.3.0-DMD61.14: SDR mode named just "Standard"; at the end of the SDR calibration the work files can be
+  deleted, as in the HDR calibration (src/Pages/SdrPage.cs); Italian strings (src/i18n/it.json).

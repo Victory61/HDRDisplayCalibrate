@@ -1,7 +1,7 @@
 // HDRDisplayCalibrate — SDR/HDR display calibration for Windows.
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
 // Modified 2026 by DMD61 (Victory61): the page switches Windows HDR off by itself (SDR calibration needs it off);
-// guided sensor dialogs (place / remove, room light); version 12–13: steps in the order they are done (optional room light
+// guided sensor dialogs (place / remove, room light); version 12–14: steps in the order they are done (optional room light
 // first); Standard / Advanced / Maximum modes with the patch counts of Calibrite PROFILER (119 / 211 / 461) and the
 // estimated time; firewall rules added before the sensor is placed; no message while the sensor is on the screen
 // (luminance limited automatically, profile set as the display default by the app, summary at the end); phase X of N.
@@ -25,7 +25,7 @@ namespace HDRDisplayCalibrate.Pages
         // DMD61: one choice only, the mode; it sets the grey-scale quality, the patch set (those of Calibrite PROFILER:
         // standard 119 read, advanced 211 and 461) and the profile type
         static readonly int[] ModePatches = { 119, 211, 461 };
-        readonly ComboBox _mode = Ui.Combo(new[] { S.T("Standard (like Calibrite PROFILER)", "Стандарт (як Calibrite PROFILER)"),
+        readonly ComboBox _mode = Ui.Combo(new[] { S.T("Standard", "Стандарт"),
                                                    S.T("Advanced", "Розширений"),
                                                    S.T("Maximum (slow)", "Максимум (довго)") }, 0);
         readonly TextBlock _modeInfo = new() { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 430, Margin = new Thickness(12, 0, 0, 0) };
@@ -49,7 +49,7 @@ namespace HDRDisplayCalibrate.Pages
                 S.T("Let the monitor warm up for about 30 minutes. In its menu turn off dynamic contrast, eco and other automatic picture modes.", "Дайте монітору прогрітися близько 30 хвилин. У його меню вимкніть динамічний контраст, еко та інші автоматичні режими картинки."),
                 S.T("Optional, before the sensor goes on the screen: measure the room light. Put the sensor on the desk next to the screen with the diffuser over the lens and press “Measure ambient light”: it fills in the room light and a suitable white luminance. You can skip this step and type the luminance yourself.", "Необов'язково, перш ніж ставити датчик на екран: поміряйте освітлення кімнати. Покладіть датчик на стіл біля екрана з розсіювачем на лінзі й натисніть «Заміряти освітлення кімнати»: програма заповнить освітлення кімнати й відповідну яскравість білого. Цей крок можна пропустити й ввести яскравість самому."),
                 S.T("If the monitor has RGB controls, get close to the target white first: Live meter → Auto OSD, or by hand (sensor on the screen).", "Якщо в моніторі є RGB-регулятори, спершу наблизьтесь до цільового білого: «Живий замір» → «Авто-OSD» або вручну (датчик на екрані)."),
-                S.T("Choose the targets and the mode below and press Start calibration: the program asks for the name of the profile and where to save the report. Standard (like Calibrite PROFILER) takes about 20 minutes; the patches and the time of each mode are shown next to it. Esc cancels at any time.", "Виберіть цілі й режим нижче й натисніть «Почати калібрування»: програма запитає назву профілю й куди зберегти звіт. Стандарт (як Calibrite PROFILER) триває близько 20 хвилин; патчі й час кожного режиму показано поруч. Esc скасовує будь-коли."),
+                S.T("Choose the targets and the mode below and press Start calibration: the program asks for the name of the profile and where to save the report. Standard takes about 20 minutes; the patches and the time of each mode are shown next to it. Esc cancels at any time.", "Виберіть цілі й режим нижче й натисніть «Почати калібрування»: програма запитає назву профілю й куди зберегти звіт. Стандарт триває близько 20 хвилин; патчі й час кожного режиму показано поруч. Esc скасовує будь-коли."),
                 S.T("The program then shows how to put the sensor on the screen: diffuser turned aside (lens uncovered), sensor in the centre. Windows HDR is switched off by the program for this display.", "Потім програма покаже, як поставити датчик на екран: розсіювач відведено вбік (лінза відкрита), датчик по центру. Windows HDR для цього дисплея програма вимикає сама."),
                 S.T("While the sensor is on the screen no message appears: the program goes through the phases by itself (grey scale, profile, verification) and shows the progress at the bottom of the measurement screen.", "Поки датчик на екрані, жодних повідомлень не з'являється: програма сама проходить етапи (сіра шкала, профіль, перевірка) і показує хід унизу екрана заміру."),
                 S.T("At the end the program says the sensor can be removed, sets the new profile as the default for this screen, saves the report and shows a summary. Do not change the screen brightness afterwards.", "Наприкінці програма скаже, що датчик можна зняти, зробить новий профіль основним для цього екрана, збереже звіт і покаже підсумок. Після цього не змінюйте яскравість екрана.")));
@@ -282,14 +282,24 @@ namespace HDRDisplayCalibrate.Pages
                         sum.Add(Ui.Row(Ui.Btn(S.T("Check in Windows Settings", "Перевірити в Параметрах Windows"), ColorProfiles.OpenDisplaySettings, false, "")));
                     _result.Children.Add(Ui.Card(sum.ToArray()));
                     if (rep != null)
-                        _result.Children.Add(Ui.Card(ReportView.Build(rep, CurveIds[ci], wp ?? rep.WhiteXy, S.T("Result", "Результат")),
-                            Ui.Caption(S.T("Files: ", "Файли: ") + dir)));
+                        _result.Children.Add(Ui.Card(ReportView.Build(rep, CurveIds[ci], wp ?? rep.WhiteXy, S.T("Result", "Результат"))));
                     // DMD61: the report is saved automatically, as at the end of the HDR calibration
                     var file = Path.Combine(reportDir, name + "_report" + (reportHtml ? ".html" : ".pdf"));
                     bool saved = ReportExport.SaveAuto(file, reportHtml, S.T("SDR calibration", "SDR калібрування") + " — " + name, _result.Children.Cast<UIElement>().ToList());
                     _result.Children.Add(Ui.Card(saved
                         ? (UIElement)Ui.Row(Ui.Text(S.T("Report saved: ", "Звіт збережено: ") + file), Ui.Btn(S.T("Open report", "Відкрити звіт"), () => { try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true }); } catch { } }, false, ""))
                         : Ui.Text(S.T("The report could not be saved: use Export report on Verify & report.", "Не вдалося зберегти звіт: скористайтеся «Експортувати звіт» на сторінці «Перевірка і звіт»."))));
+                    // DMD61: as at the end of the HDR calibration, the work files (measurements, curves, a copy of the profile)
+                    // can be deleted: the profile is installed in Windows and the results are in the report
+                    if (saved && Directory.Exists(dir))
+                    {
+                        bool deleted = false;
+                        if (MessageBox.Show(S.T("Delete the work files of this calibration (measurements, curves and a copy of the profile)?\n\nThe profile is installed in Windows and the results are in the saved report.", "Видалити робочі файли цього калібрування (заміри, криві й копію профілю)?\n\nПрофіль установлено у Windows, а результати є в збереженому звіті."),
+                                            "HDRDisplayCalibrate", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+                            try { Directory.Delete(dir, true); deleted = true; Log.Write("work folder deleted: " + dir); }
+                            catch (Exception e) { Log.Write("work folder not deleted: " + e.Message); }
+                        if (!deleted) _result.Children.Add(Ui.Card(Ui.Caption(S.T("Work files: ", "Робочі файли: ") + dir)));
+                    }
                     _result.Children.Add(PatternsPage.Suggestion());   // DMD61: suggest the independent check by eye
                 });
             });

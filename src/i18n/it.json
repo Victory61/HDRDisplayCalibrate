@@ -641,5 +641,8 @@
  "be487b51": "Standard usa il set di patch standard di Calibrite PROFILER (119 patch); Avanzata e Massima i suoi set più grandi (211 e 461) e calibrano la scala di grigi in modo più fine.",
  "6110eee0": "Non è stato possibile salvare il report: usa Esporta report nella pagina Verifica e report.",
  "015e2ef4": "{0} patch per il profilo",
- "9a4df721": "{0} patch per il profilo + {1} per la verifica"
+ "9a4df721": "{0} patch per il profilo + {1} per la verifica",
+ "d46c5d31": "Scegli gli obiettivi e la modalità qui sotto e premi Avvia calibrazione: il programma chiede il nome del profilo e dove salvare il report. La modalità Standard dura circa 20 minuti; accanto a ogni modalità sono indicati patch e tempo. Esc interrompe in qualsiasi momento.",
+ "7749fadb": "Cancellare i file di lavoro di questa calibrazione (misure, curve e una copia del profilo)?\n\nIl profilo è installato in Windows e i risultati sono nel report salvato.",
+ "8c18217f": "File di lavoro: "
 }
