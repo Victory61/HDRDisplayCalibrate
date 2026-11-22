@@ -58,3 +58,17 @@ Modifications by DMD61 (Victory61), 2026:
   about the Windows firewall question asked for ArgyllCMS; the brightness question no longer offers DDC/CI when the
   screen has none, and the sensor is put back in place before the measurement goes on (src/Pages/SdrPage.cs); the log
   starts again above 5 MB, the old one kept as log.old.txt (src/Core/Log.cs); Italian strings (src/i18n/it.json).
+- Version 12 = 0.3.0-DMD61.12, SDR calibration reworked after a test on a laptop: steps listed in the order they are
+  done, the optional room light measured before the sensor goes on the screen and offered by Start calibration;
+  Standard / Advanced / Maximum modes with the patch sets of Calibrite PROFILER (119 / 211 / 461) and the estimated time,
+  Standard by default with the profile built at medium quality; the room-light tone adjustment explained and disabled
+  without a measured room light; verification label with the real number of patches (65); no message while the sensor
+  is on the screen: the luminance is limited automatically (DDC/CI raises it when available), the profile is set as the
+  display default by the app (also in the Windows 11 Settings list), and the sensor-removal prompt and a summary come at
+  the end (src/Pages/SdrPage.cs, Core/ColorProfiles.cs, Pages/ProbeGuide.cs); the status line shows "Phase X of N", the
+  pass and the patch, without the time left, much dimmer on dark patches (src/PatchWindow.cs, Jobs.cs); the Windows
+  firewall rules for the ArgyllCMS tools are added before the sensor is placed, through an elevated copy of the app
+  ("--firewall-rules"), so Windows no longer asks during the measurement (src/Pages/FirewallFix.cs, App.xaml.cs);
+  clearer three-step room-light picture (src/Pages/ProbeGuide.cs); HDR calibration greyed out in the menu for a screen
+  without HDR (src/MainWindow.xaml.cs); clear message when the diffuser is left over the lens (src/Jobs.cs); estimated
+  time based on a real run; Italian strings (src/i18n/it.json).

@@ -2,7 +2,7 @@
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
 // Added 2026 by DMD61 (Victory61): guided sensor dialogs (place / check / remove), modelled on the
 // step-by-step prompts of commercial calibration software, so the HDR wizard can be followed without a manual;
-// room light measurement (sensor on the desk, diffuser over the lens).
+// room light measurement (sensor on the desk, diffuser over the lens); version 12: clearer three-step room-light picture.
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -46,6 +46,7 @@ namespace HDRDisplayCalibrate.Pages
                     S.T("Leave it there until the app tells you it can be removed.", "Залиште його там, доки програма не скаже, що його можна зняти.")));
                 body.Children.Add(Note(S.T("During each measurement the screen turns black, grey, white and then coloured for a few minutes. That is normal: do not touch the mouse, keyboard or sensor until the step is done.",
                                            "Під час кожного заміру екран на кілька хвилин стає чорним, сірим, білим, а потім кольоровим. Це нормально: не торкайтеся миші, клавіатури й датчика, доки крок не завершиться.")));
+                if (!string.IsNullOrEmpty(extra)) body.Children.Add(Note(extra));   // DMD61: page-specific note (SDR calibration)
                 ok = Ui.Btn(S.T("Sensor in place — start", "Датчик на місці — почати"), () => { DialogResult = true; }, true);
                 cancel = Ui.Btn(S.T("Cancel", "Скасувати"), () => { DialogResult = false; });
             }
@@ -112,39 +113,63 @@ namespace HDRDisplayCalibrate.Pages
             Child = Ui.Text(text)
         };
 
-        /// <summary>Room light, two pictures: 1) turn the diffuser over the lens; 2) the sensor standing on the desk in front of
-        /// the monitor, diffuser facing the user.</summary>
+        /// <summary>Room light, three pictures (DMD61, redrawn to be read at a glance): 1) the lens uncovered, as for the screen,
+        /// with the arrow showing how the diffuser turns; 2) the diffuser over the lens, ready; 3) the sensor standing on the desk
+        /// in front of the monitor, diffuser facing the user, under the normal room light.</summary>
         static UIElement AmbientDiagram()
         {
-            var c = new Canvas { Width = 640, Height = 230, Margin = new Thickness(0, 6, 0, 10), HorizontalAlignment = HorizontalAlignment.Left };
+            var c = new Canvas { Width = 660, Height = 250, Margin = new Thickness(0, 6, 0, 10), HorizontalAlignment = HorizontalAlignment.Left };
             void At(UIElement e, double x, double y) { Canvas.SetLeft(e, x); Canvas.SetTop(e, y); c.Children.Add(e); }
             var panel = new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B));
             var body = new SolidColorBrush(Color.FromRgb(0x5A, 0x5A, 0x5A));
+            var arm = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44));
+            var ok = new SolidColorBrush(Color.FromRgb(0x4C, 0xC3, 0x6A));
             TextBlock Num(string n) => new() { Text = n, FontSize = 15, FontWeight = FontWeights.Bold, Foreground = Ui.Accent };
+            TextBlock Label(string t, Brush b, double w) => new() { Text = t, FontSize = 12, Foreground = b, Width = w, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap };
+            // the sensor seen from the front: rounded body, round lens, cable below
+            void Sensor(double x, double y, bool covered)
+            {
+                c.Children.Add(new Line { X1 = x + 45, Y1 = y + 110, X2 = x + 45, Y2 = y + 140, Stroke = Ui.Muted, StrokeThickness = 3 });   // cable
+                At(new Rectangle { Width = 90, Height = 110, Fill = body, Stroke = Ui.Muted, StrokeThickness = 2, RadiusX = 16, RadiusY = 16 }, x, y);
+                At(new Ellipse { Width = 50, Height = 50, Fill = Brushes.Black, Stroke = Ui.Muted, StrokeThickness = 2 }, x + 20, y + 30);   // lens
+                if (covered) At(new Ellipse { Width = 58, Height = 58, Fill = Brushes.White, Stroke = arm, StrokeThickness = 3 }, x + 16, y + 26);   // diffuser over the lens
+            }
 
-            // 1. turn the diffuser over the lens
-            At(new Rectangle { Width = 250, Height = 190, Fill = panel, RadiusX = 6, RadiusY = 6 }, 0, 0);
+            // 1. lens uncovered; the diffuser on its arm beside it, arrow: turn it over the lens
+            At(new Rectangle { Width = 200, Height = 205, Fill = panel, RadiusX = 6, RadiusY = 6 }, 0, 0);
             At(Num("1"), 10, 6);
-            At(new Rectangle { Width = 90, Height = 110, Fill = body, Stroke = Ui.Muted, StrokeThickness = 2, RadiusX = 14, RadiusY = 14 }, 80, 50);
-            At(new Ellipse { Width = 44, Height = 44, Fill = Brushes.Black, Stroke = Ui.Muted, StrokeThickness = 2 }, 103, 83);           // lens
-            At(new Ellipse { Width = 50, Height = 50, Fill = Brushes.White, Opacity = 0.92 }, 100, 80);                                    // diffuser now over the lens
-            At(new Ellipse { Width = 50, Height = 50, Stroke = Ui.Muted, StrokeThickness = 2, StrokeDashArray = new DoubleCollection { 3, 3 } }, 168, 80);   // where it was
-            c.Children.Add(new Path { Data = Geometry.Parse("M 195,72 A 50,40 0 0 0 128,58"), Stroke = Ui.Warm, StrokeThickness = 4 });
-            c.Children.Add(new Path { Data = Geometry.Parse("M 120,58 L 134,48 L 133,66 Z"), Fill = Ui.Warm });
-            c.Children.Add(new Line { X1 = 125, Y1 = 160, X2 = 125, Y2 = 186, Stroke = Ui.Muted, StrokeThickness = 3 });                  // cable
-            At(new TextBlock { Text = S.T("turn the diffuser over the lens", "поверніть розсіювач на лінзу"), FontSize = 12, Foreground = Ui.Warm, Width = 230, TextAlignment = TextAlignment.Center }, 10, 196);
+            Sensor(30, 40, false);
+            At(new Rectangle { Width = 46, Height = 14, Fill = arm, RadiusX = 7, RadiusY = 7 }, 112, 88);                                   // arm
+            At(new Ellipse { Width = 50, Height = 50, Fill = Brushes.White, Opacity = 0.9, Stroke = arm, StrokeThickness = 3 }, 138, 70);   // diffuser aside
+            c.Children.Add(new Path { Data = Geometry.Parse("M 168,62 C 160,22 100,20 82,52"), Stroke = Ui.Warm, StrokeThickness = 4 });
+            c.Children.Add(new Path { Data = Geometry.Parse("M 74,46 L 92,46 L 80,64 Z"), Fill = Ui.Warm });
+            At(Label(S.T("turn the white diffuser over the lens", "поверніть білий розсіювач на лінзу"), Ui.Warm, 190), 5, 182);
 
-            // 2. sensor standing on the desk in front of the monitor, diffuser facing you
-            At(new Rectangle { Width = 370, Height = 190, Fill = panel, RadiusX = 6, RadiusY = 6 }, 270, 0);
-            At(Num("2"), 280, 6);
-            At(new Rectangle { Width = 230, Height = 130, Stroke = Ui.Muted, StrokeThickness = 4, RadiusX = 4, RadiusY = 4 }, 330, 18);   // monitor
-            At(new Rectangle { Width = 10, Height = 22, Fill = Ui.Muted }, 440, 148);
-            At(new Rectangle { Width = 80, Height = 6, Fill = Ui.Muted }, 405, 168);
-            At(new Rectangle { Width = 340, Height = 6, Fill = body }, 285, 174);                                                        // desk
-            At(new Rectangle { Width = 46, Height = 52, Fill = body, Stroke = Ui.Accent, StrokeThickness = 2, RadiusX = 8, RadiusY = 8 }, 500, 122);   // sensor upright
-            At(new Ellipse { Width = 26, Height = 26, Fill = Brushes.White }, 510, 134);                                                   // diffuser facing you
-            c.Children.Add(new Path { Data = Geometry.Parse("M 546,140 C 575,130 580,95 556,80"), Stroke = Ui.Muted, StrokeThickness = 3 });   // cable
-            At(new TextBlock { Text = S.T("sensor standing on the desk, diffuser facing you", "датчик стоїть на столі, розсіювачем до вас"), FontSize = 12, Foreground = Ui.Accent, Width = 360, TextAlignment = TextAlignment.Center }, 275, 196);
+            // 2. diffuser over the lens: ready
+            At(new Rectangle { Width = 170, Height = 205, Fill = panel, RadiusX = 6, RadiusY = 6 }, 215, 0);
+            At(Num("2"), 225, 6);
+            Sensor(255, 40, true);
+            At(new Ellipse { Width = 30, Height = 30, Fill = ok }, 330, 30);
+            c.Children.Add(new Path { Data = Geometry.Parse("M 337,45 L 343,52 L 354,38"), Stroke = Brushes.White, StrokeThickness = 3.5 });
+            At(Label(S.T("lens covered: ready", "лінза закрита: готово"), ok, 160), 220, 182);
+
+            // 3. on the desk in front of the monitor, diffuser facing you, normal room light
+            At(new Rectangle { Width = 260, Height = 205, Fill = panel, RadiusX = 6, RadiusY = 6 }, 400, 0);
+            At(Num("3"), 410, 6);
+            // room lamp with light rays
+            At(new Path { Data = Geometry.Parse("M 0,14 L 10,0 L 30,0 L 40,14 Z"), Fill = Ui.Warm }, 600, 10);
+            foreach (var (x2, y2) in new[] { (590.0, 50.0), (620.0, 56.0), (650.0, 50.0) })
+                c.Children.Add(new Line { X1 = 620, Y1 = 26, X2 = x2, Y2 = y2, Stroke = Ui.Warm, StrokeThickness = 2, StrokeDashArray = new DoubleCollection { 2, 2 } });
+            At(new Rectangle { Width = 150, Height = 95, Stroke = Ui.Muted, StrokeThickness = 4, RadiusX = 4, RadiusY = 4 }, 425, 30);   // monitor
+            At(new Rectangle { Width = 10, Height = 26, Fill = Ui.Muted }, 495, 125);
+            At(new Rectangle { Width = 60, Height = 6, Fill = Ui.Muted }, 470, 150);
+            At(new Rectangle { Width = 240, Height = 6, Fill = body }, 410, 156);                                                      // desk
+            At(new Rectangle { Width = 40, Height = 48, Fill = body, Stroke = Ui.Accent, StrokeThickness = 2, RadiusX = 8, RadiusY = 8 }, 585, 108);   // sensor standing
+            At(new Ellipse { Width = 26, Height = 26, Fill = Brushes.White }, 592, 116);                                               // diffuser facing you
+            c.Children.Add(new Path { Data = Geometry.Parse("M 585,128 C 560,128 550,120 540,150"), Stroke = Ui.Muted, StrokeThickness = 3 });   // cable
+            c.Children.Add(new Line { X1 = 605, Y1 = 166, X2 = 605, Y2 = 178, Stroke = Ui.Accent, StrokeThickness = 3 });               // "towards you"
+            c.Children.Add(new Path { Data = Geometry.Parse("M 598,176 L 612,176 L 605,184 Z"), Fill = Ui.Accent });
+            At(Label(S.T("on the desk in front of the monitor, diffuser facing you", "на столі перед монітором, розсіювачем до вас"), Ui.Accent, 250), 405, 186);
             return c;
         }
 

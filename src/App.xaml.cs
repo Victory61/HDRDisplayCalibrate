@@ -9,7 +9,7 @@ namespace HDRDisplayCalibrate
     public partial class App : Application
     {
         /// <summary>DMD61: version of this modified build (base 0.3.0 by Andrii Orlov, modification 9). Shown in the title bar and the report.</summary>
-        public const string ModVersion = "0.3.0-DMD61.11";
+        public const string ModVersion = "0.3.0-DMD61.12";
 
         /// <summary>Rebuilds the main window in another language, on the same page.</summary>
         public void Reload(string lang)
@@ -36,6 +36,7 @@ namespace HDRDisplayCalibrate
                 Shutdown(); return;
             }
             if (e.Args.Length > 0 && e.Args[0] == "--restart-dwm") { Pages.HdrOffFix.KillDwm(); Shutdown(); return; }   // DMD61
+            if (e.Args.Length > 1 && e.Args[0] == "--firewall-rules") { Pages.FirewallFix.AddRules(e.Args[1]); Shutdown(); return; }   // DMD61
             if (e.Args.Length > 0 && e.Args[0] == "--selftest") { SelfTest.Run(e.Args.Skip(1).ToArray()); Shutdown(); return; }
             if (e.Args.Length > 1 && e.Args[0] == "--render3d")
             {

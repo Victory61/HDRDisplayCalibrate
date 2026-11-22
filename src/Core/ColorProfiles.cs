@@ -1,6 +1,6 @@
 // HDRDisplayCalibrate — SDR/HDR display calibration for Windows.
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
-// Modified 2026 by DMD61 (Victory61): Uninstall (test profiles clean-up) and OpenHdrSettings.
+// Modified 2026 by DMD61 (Victory61): Uninstall (test profiles clean-up) and OpenHdrSettings; Associate (used by the SDR calibration).
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,6 +29,14 @@ namespace HDRDisplayCalibrate.Core
         {
             if (!InstallColorProfileW(null, iccPath)) throw new IOException("InstallColorProfile failed: " + Marshal.GetLastWin32Error());
             var name = Path.GetFileName(iccPath);
+            Associate(d, name, hdr);
+            return name;
+        }
+
+        /// <summary>Adds an installed profile (file already in the colour folder) to the display's list in Settings;
+        /// SDR profiles also become the default. DMD61: split from Install so the SDR calibration can call it too.</summary>
+        public static void Associate(DisplayTarget d, string name, bool hdr)
+        {
             // HDR: only add the profile to the display's list. Marking it as default through the API shows it as
             // "Current HDR profile" in Settings, but Windows applies an HDR profile only when the user presses
             // "Set profile" there (and that button is disabled for the current one)
@@ -42,7 +50,6 @@ namespace HDRDisplayCalibrate.Core
                 if (!string.IsNullOrEmpty(d.DevicePath)) AssociateColorProfileWithDeviceW(null, name, d.DevicePath);
             }
             Log.Write($"profile {name} → {d.Name} ({(hdr ? "HDR" : "SDR")})");
-            return name;
         }
 
         public static void SetDefault(DisplayTarget d, string name, bool hdr) =>

@@ -27,6 +27,7 @@ namespace HDRDisplayCalibrate
         readonly TextBlock _hint = new() { Foreground = new SolidColorBrush(Color.FromArgb(150, 255, 255, 255)), FontSize = 12, Margin = new Thickness(10), VerticalAlignment = VerticalAlignment.Bottom, TextWrapping = TextWrapping.Wrap };
         // DMD61: small and dim, at the bottom edge, far from the sensor in the centre
         readonly TextBlock _status = new() { Foreground = new SolidColorBrush(Color.FromArgb(200, 128, 128, 128)), FontSize = 14, Margin = new Thickness(16, 10, 16, 12), VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Left, TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed };
+        static readonly Brush NormalText = new SolidColorBrush(Color.FromArgb(200, 128, 128, 128)), DimText = new SolidColorBrush(Color.FromRgb(48, 48, 48));
         string _statusLine = "";
         bool _dark;
         readonly bool _fullscreen;
@@ -80,16 +81,15 @@ namespace HDRDisplayCalibrate
             _dark = Math.Max(r, Math.Max(g, b)) < 48; ShowStatus();
         }
 
-        /// <summary>DMD61: text of the status line (stage, patch, time left); null or empty hides it.</summary>
+        /// <summary>DMD61: text of the status line (phase, pass, patch); null or empty hides it.</summary>
         public void SetStatus(string line) { _statusLine = line ?? ""; ShowStatus(); }
 
         void ShowStatus()
         {
             if (_statusLine.Length == 0) { _status.Visibility = Visibility.Collapsed; return; }
-            _status.Text = _statusLine
-                + (_dark ? "  ·  " + S.T("measuring a dark patch…", "замір темного патча…") : "")
-                + "\n" + S.T("Dark patches take longer to measure: this is normal, the program is not stuck. Do not move the sensor. Esc cancels.",
-                             "Темні патчі міряються довше: це нормально, програма не зависла. Не рухайте датчик. Esc скасовує.");
+            _status.Text = _statusLine + "\n" + S.T("Dark patches take longer to measure. Do not move the sensor. Esc to cancel.", "Темні патчі міряються довше. Не рухайте датчик. Esc — скасувати.");
+            // on dark patches the text is much dimmer, so its light cannot matter even for the black reading
+            _status.Foreground = _dark ? DimText : NormalText;
             _status.Visibility = Visibility.Visible;
         }
 

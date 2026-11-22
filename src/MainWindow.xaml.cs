@@ -89,6 +89,8 @@ namespace HDRDisplayCalibrate
                 {
                     bool can = d == null || d.HdrSupported;
                     hi.IsEnabled = can;
+                    hi.Opacity = can ? 1 : 0.4;   // DMD61: a disabled item looked the same as the others
+                    ToolTipService.SetShowOnDisabled(hi, true);
                     Ui.Tip(hi, can ? _pages[HdrPageIndex].tip : S.T("This monitor does not support HDR.", "Цей монітор не підтримує HDR."));
                     if (!can && Nav.SelectedIndex == HdrPageIndex) Nav.SelectedIndex = SdrPageIndex;
                 }
