@@ -1,7 +1,7 @@
 // HDRDisplayCalibrate — SDR/HDR display calibration for Windows.
 // Copyright 2026 Andrii Orlov (DeadSue). Licensed under the Apache License, Version 2.0.
 // Modified 2026 by DMD61 (Victory61): the page switches Windows HDR off by itself (SDR calibration needs it off);
-// guided sensor dialogs (place / remove, room light); version 12–15: steps in the order they are done (optional room light
+// guided sensor dialogs (place / remove, room light); version 12–16: steps in the order they are done (optional room light
 // first); Standard / Advanced / Maximum modes with the patch counts of Calibrite PROFILER (119 / 211 / 461) and the
 // estimated time; firewall rules added before the sensor is placed; no message while the sensor is on the screen
 // (luminance limited automatically, profile set as the display default by the app, summary at the end); phase X of N.
@@ -51,7 +51,7 @@ namespace HDRDisplayCalibrate.Pages
                 S.T("If the monitor has RGB controls, get close to the target white first: Live meter → Auto OSD, or by hand (sensor on the screen).", "Якщо в моніторі є RGB-регулятори, спершу наблизьтесь до цільового білого: «Живий замір» → «Авто-OSD» або вручну (датчик на екрані)."),
                 S.T("Choose the targets and the mode below and press Start calibration: the program asks for the name of the profile and where to save the report. Standard takes about 20 minutes; the patches and the time of each mode are shown next to it. Esc cancels at any time.", "Виберіть цілі й режим нижче й натисніть «Почати калібрування»: програма запитає назву профілю й куди зберегти звіт. Стандарт триває близько 20 хвилин; патчі й час кожного режиму показано поруч. Esc скасовує будь-коли."),
                 S.T("The program then shows how to put the sensor on the screen: diffuser turned aside (lens uncovered), sensor in the centre. Windows HDR is switched off by the program for this display.", "Потім програма покаже, як поставити датчик на екран: розсіювач відведено вбік (лінза відкрита), датчик по центру. Windows HDR для цього дисплея програма вимикає сама."),
-                S.T("While the sensor is on the screen no message appears: the program goes through the phases by itself (grey scale, profile, verification) and shows the progress at the bottom of the measurement screen.", "Поки датчик на екрані, жодних повідомлень не з'являється: програма сама проходить етапи (сіра шкала, профіль, перевірка) і показує хід унизу екрана заміру."),
+                S.T("The program first checks the screen brightness: if it is far from the chosen luminance (for example a screen kept at maximum), a small window in a corner shows the white live while you adjust the brightness with the monitor or keyboard keys, without touching the sensor. Then no message appears: the program goes through the phases by itself (grey scale, profile, verification) and shows the progress at the bottom of the measurement screen.", "Спершу програма перевіряє яскравість екрана: якщо вона далека від вибраної (наприклад, екран на максимумі), невелике вікно в куті показує білий наживо, поки ви налаштовуєте яскравість кнопками монітора чи клавіатури, не торкаючись датчика. Далі жодних повідомлень: програма сама проходить етапи (сіра шкала, профіль, перевірка) і показує хід унизу екрана заміру."),
                 S.T("At the end the program says the sensor can be removed, sets the new profile as the default for this screen, saves the report and shows a summary. Do not change the screen brightness afterwards.", "Наприкінці програма скаже, що датчик можна зняти, зробить новий профіль основним для цього екрана, збереже звіт і покаже підсумок. Після цього не змінюйте яскравість екрана.")));
             // DMD61: the optional room-light measurement in its own card, before the targets, as it is done first
             Body.Children.Add(Ui.Card(Ui.H2(S.T("Ambient light measurement — optional", "Вимірювання освітлення кімнати — необов'язково")),
@@ -166,8 +166,8 @@ namespace HDRDisplayCalibrate.Pages
             string proposed = string.Join("_", $"{d.Model}_{DateTime.Now:yyyy-MM-dd_HHmm}".Split(Path.GetInvalidFileNameChars())).Replace(' ', '_');
             var (name, reportDir, reportHtml) = ProfileNameDialog.Ask(proposed);
             if (!await FirewallFix.Ensure()) return;
-            if (!ProbeGuide.Ask(ProbeGuide.Mode.Place, S.T("From now on no message appears until the program says the sensor can be removed. If the screen cannot reach the chosen white luminance, the program calibrates at the highest it can reach and tells you at the end.",
-                                                           "Відтепер жодних повідомлень не буде, доки програма не скаже, що датчик можна зняти. Якщо екран не досягає вибраної яскравості білого, програма калібрує на максимально можливій і скаже про це наприкінці."))) return;
+            if (!ProbeGuide.Ask(ProbeGuide.Mode.Place, S.T("First the program checks the screen brightness: if it is far from the chosen luminance, a small window in a corner shows the white live while you change the brightness with the monitor or keyboard keys. Never touch the sensor. After that no message appears until the program says the sensor can be removed.",
+                                                           "Спершу програма перевіряє яскравість екрана: якщо вона далека від вибраної, невелике вікно в куті показує білий наживо, поки ви змінюєте яскравість кнопками монітора чи клавіатури. Ніколи не торкайтеся датчика. Після цього жодних повідомлень не буде, доки програма не скаже, що датчик можна зняти."))) return;
             // DMD61: phase X of N in the status line of the measurement screen
             int phases = 1 + (npatch > 0 ? 1 : 0) + (verify ? 1 : 0), phase = 0;
             string Phase(string what) => S.F("Phase {0} of {1}: {2}", "Етап {0} з {1}: {2}", ++phase, phases, what);
@@ -195,34 +195,58 @@ namespace HDRDisplayCalibrate.Pages
                     // target is lowered to what the screen reaches and the summary says so
                     if (!double.IsNaN(nits) && St.Setup.OwnWindow)
                     {
+                        // DMD61: brightness check before the calibration starts. Close to the target: go on at once.
+                        // Far from it: DDC/CI adjusts the monitor by itself, otherwise a small window in a corner shows
+                        // the white live while the user changes the brightness (the sensor is never touched).
                         double native;
                         using (var rd = new Jobs.LiveReader(fast: true)) native = (await rd.Read(1, 1, 1, ct)).Y;
-                        double reach = native * 0.95;
-                        if (nits > reach)
+                        if (!BrightnessCheck.Good(native, nits))
                         {
-                            bool raised = false, hasDdc;
+                            bool hasDdc;
                             using (var t = Ddc.Open(d)) hasDdc = t?.Get(Ddc.Brightness) != null;
                             if (hasDdc)
                                 try
                                 {
-                                    St.Report(S.T("Raising monitor brightness…", "Піднімаю яскравість монітора…"));
+                                    St.Report(S.T("Adjusting monitor brightness…", "Налаштовую яскравість монітора…"));
                                     var res = await Jobs.AutoOsd(d, null, nits / 0.95, dir, ct);
                                     Log.Write("brightness for calibration: " + res);
                                     Argyll.LutLinear(disp);
-                                    using (var rd = new Jobs.LiveReader(fast: true)) reach = (await rd.Read(1, 1, 1, ct)).Y * 0.95;
-                                    raised = nits <= reach;
-                                    if (raised) notes.Add(S.T("The monitor brightness was raised over DDC/CI to reach the target white luminance.", "Яскравість монітора піднято через DDC/CI, щоб досягти цільової яскравості білого."));
+                                    using (var rd = new Jobs.LiveReader(fast: true)) native = (await rd.Read(1, 1, 1, ct)).Y;
+                                    if (BrightnessCheck.Good(native, nits)) notes.Add(S.T("The monitor brightness was adjusted over DDC/CI to reach the target white luminance.", "Яскравість монітора налаштовано через DDC/CI, щоб досягти цільової яскравості білого."));
                                 }
                                 catch (OperationCanceledException) { throw; }
                                 catch (Exception e) { Log.Write("DDC brightness: " + e.Message); }
-                            if (!raised)
+                            if (!BrightnessCheck.Good(native, nits))
                             {
-                                int bi = a.FindIndex(v => v.StartsWith("-b"));
-                                a[bi] = string.Format(CultureInfo.InvariantCulture, "-b{0:0}", Math.Floor(reach));
-                                notes.Add(S.F("This screen reaches about {0:F0} cd/m² after the white point correction, below the target of {1:F0} cd/m²: it was calibrated to {0:F0} cd/m². To reach the target, raise the screen brightness and calibrate again.",
-                                              "Після корекції точки білого цей екран дає близько {0:F0} кд/м², менше за ціль {1:F0} кд/м²: його відкалібровано на {0:F0} кд/м². Щоб досягти цілі, підніміть яскравість екрана й відкалібруйте знову.", Math.Floor(reach), nits));
+                                using var rd = new Jobs.LiveReader(fast: true);   // its patch window first, the check window above it
+                                var chk = Dispatcher.Invoke(() => { var w = new BrightnessCheck(d, nits); w.Show(); return w; });
+                                try
+                                {
+                                    Dispatcher.Invoke(() => chk.Update(native));
+                                    while (chk.Result == null && !chk.Cancelled)
+                                    {
+                                        native = (await rd.Read(1, 1, 1, ct, 100)).Y;
+                                        Dispatcher.Invoke(() => chk.Update(native));
+                                    }
+                                }
+                                finally { Dispatcher.Invoke(() => { if (chk.IsVisible) chk.Close(); }); }
+                                if (chk.Cancelled) throw new OperationCanceledException();
+                                Log.Write($"brightness check: white {native:F1} cd/m², target {nits:F0}, " + (chk.Result == true ? "ok" : "continued anyway"));
                             }
                         }
+                        // the white point correction costs some light: never chase a luminance the screen cannot reach,
+                        // otherwise dispcal keeps trying for hours and the white point suffers
+                        double reach = native * 0.95;
+                        if (nits > reach)
+                        {
+                            int bi = a.FindIndex(v => v.StartsWith("-b"));
+                            a[bi] = string.Format(CultureInfo.InvariantCulture, "-b{0:0}", Math.Floor(reach));
+                            notes.Add(S.F("This screen reaches about {0:F0} cd/m² after the white point correction, below the target of {1:F0} cd/m²: it was calibrated to {0:F0} cd/m². To reach the target, raise the screen brightness and calibrate again.",
+                                          "Після корекції точки білого цей екран дає близько {0:F0} кд/м², менше за ціль {1:F0} кд/м²: його відкалібровано на {0:F0} кд/м². Щоб досягти цілі, підніміть яскравість екрана й відкалібруйте знову.", Math.Floor(reach), nits));
+                        }
+                        else if (reach > nits * 1.15)
+                            notes.Add(S.F("The screen was much brighter than the target ({0:F0} cd/m² for {1:F0}): the calibration lowers it, but black stays lighter and some grey levels are lost. For the best result lower the screen brightness and calibrate again.",
+                                          "Екран був значно яскравіший за ціль ({0:F0} кд/м² при {1:F0}): калібрування його знижує, але чорний лишається світлішим і частина рівнів сірого втрачається. Для найкращого результату зменште яскравість екрана й відкалібруйте знову.", native, nits));
                     }
                     var (code, outp) = await Jobs.RunMeasuring("dispcal", a, dir, Phase(S.T("Grey scale calibration", "Калібрування сірої шкали")), ct);
                     if (code != 0) throw new Exception(Jobs.LastError(outp) ?? "dispcal failed");

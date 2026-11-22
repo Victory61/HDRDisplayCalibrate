@@ -649,5 +649,19 @@
  "299ba4e8": "Facoltativo, prima di mettere la sonda sullo schermo: misura la luce della stanza. Appoggia la sonda sulla scrivania accanto allo schermo, con il diffusore sopra l'ottica, e premi «Avvia misurazione luce ambientale»: il programma compila la luce della stanza e una luminanza del bianco adatta. Puoi saltare questo passo e scrivere tu la luminanza.",
  "6a80ee6c": "Illuminamento della stanza usato per adattare la curva di tono. Lo compila il pulsante «Avvia misurazione luce ambientale».",
  "b3652c22": "Sonda sulla scrivania con il diffusore sopra l'ottica. Misura la luce della stanza e propone la luminanza del bianco adatta. Puoi saltarla e scrivere tu la luminanza qui sotto.",
- "bcf8c97c": "Avvia misurazione luce ambientale"
+ "bcf8c97c": "Avvia misurazione luce ambientale",
+ "3e69388a": "Regolo la luminosità del monitor…",
+ "2e026239": "Continua",
+ "01185606": "Continua comunque",
+ "5271f808": "Non toccare la sonda. Cambia la luminosità con i pulsanti del monitor, i tasti della tastiera o le impostazioni di Windows.",
+ "39b83796": "Prima il programma controlla la luminosità dello schermo: se è lontana da quella scelta, una piccola finestra in un angolo mostra il bianco in tempo reale mentre cambi la luminosità con i pulsanti del monitor o i tasti della tastiera. Non toccare mai la sonda. Dopo non compare più nessun messaggio finché il programma non dice che puoi togliere la sonda.",
+ "baebbb18": "Bene: premi Continua.",
+ "8945ea3a": "Misurazione in corso…",
+ "92f2e42a": "Luminosità dello schermo",
+ "c7ceed0d": "La luminosità del monitor è stata regolata tramite DDC/CI per raggiungere la luminanza del bianco obiettivo.",
+ "d3cfdb93": "Il programma controlla prima la luminosità dello schermo: se è lontana da quella scelta (per esempio uno schermo tenuto al massimo), una piccola finestra in un angolo mostra il bianco in tempo reale mentre regoli la luminosità con i pulsanti del monitor o i tasti della tastiera, senza toccare la sonda. Poi non compare più nessun messaggio: il programma esegue da solo le fasi (grigi, profilo, verifica) e mostra l'avanzamento in basso nella schermata di misura.",
+ "8fef007e": "Lo schermo era molto più luminoso dell'obiettivo ({0:F0} cd/m² invece di {1:F0}): la calibrazione lo abbassa, ma il nero resta più chiaro e si perdono alcuni livelli di grigio. Per il risultato migliore abbassa la luminosità dello schermo e ripeti la calibrazione.",
+ "88cdda65": "Troppo luminoso: abbassa la luminosità dello schermo finché il valore diventa verde. Uno schermo molto più luminoso dell'obiettivo perde contrasto (nero più chiaro) e livelli di grigio.",
+ "76b64d88": "Troppo scuro: alza la luminosità dello schermo finché il valore diventa verde. Se non si può alzare di più, premi Continua comunque: il programma calibra alla luminanza massima che lo schermo raggiunge.",
+ "8f9daacc": "Bianco ora: {0:F0} cd/m² · obiettivo {1:F0} cd/m²"
 }

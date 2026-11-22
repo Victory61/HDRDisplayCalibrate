@@ -84,3 +84,8 @@ Modifications by DMD61 (Victory61), 2026:
 - Version 15 = 0.3.0-DMD61.15: the optional room-light measurement has its own card, "Ambient light measurement —
   optional", before the targets, with the button "Start ambient light measurement" (src/Pages/SdrPage.cs); Italian
   strings (src/i18n/it.json).
+- Version 16 = 0.3.0-DMD61.16: brightness check before the SDR calibration: when the white is far from the chosen
+  luminance (for example a screen kept at maximum), DDC/CI adjusts the monitor or, without DDC/CI, a small window in a
+  corner of the screen shows the white measured live while the user changes the brightness, without touching the sensor
+  (src/Pages/BrightnessCheck.cs, src/Pages/SdrPage.cs); the summary says when the screen was left much brighter than the
+  target; Italian strings (src/i18n/it.json).
