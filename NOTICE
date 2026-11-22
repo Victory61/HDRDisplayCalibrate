@@ -81,3 +81,6 @@ Modifications by DMD61 (Victory61), 2026:
   "Measure ambient light" (src/Pages/SdrPage.cs); Italian strings (src/i18n/it.json).
 - Version 14 = 0.3.0-DMD61.14: SDR mode named just "Standard"; at the end of the SDR calibration the work files can be
   deleted, as in the HDR calibration (src/Pages/SdrPage.cs); Italian strings (src/i18n/it.json).
+- Version 15 = 0.3.0-DMD61.15: the optional room-light measurement has its own card, "Ambient light measurement —
+  optional", before the targets, with the button "Start ambient light measurement" (src/Pages/SdrPage.cs); Italian
+  strings (src/i18n/it.json).

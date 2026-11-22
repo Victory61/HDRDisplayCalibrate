@@ -644,5 +644,10 @@
  "9a4df721": "{0} patch per il profilo + {1} per la verifica",
  "d46c5d31": "Scegli gli obiettivi e la modalità qui sotto e premi Avvia calibrazione: il programma chiede il nome del profilo e dove salvare il report. La modalità Standard dura circa 20 minuti; accanto a ogni modalità sono indicati patch e tempo. Esc interrompe in qualsiasi momento.",
  "7749fadb": "Cancellare i file di lavoro di questa calibrazione (misure, curve e una copia del profilo)?\n\nIl profilo è installato in Windows e i risultati sono nel report salvato.",
- "8c18217f": "File di lavoro: "
+ "8c18217f": "File di lavoro: ",
+ "e93cc508": "RILEVAZIONE DELLA LUMINOSITÀ AMBIENTALE — FACOLTATIVA",
+ "299ba4e8": "Facoltativo, prima di mettere la sonda sullo schermo: misura la luce della stanza. Appoggia la sonda sulla scrivania accanto allo schermo, con il diffusore sopra l'ottica, e premi «Avvia misurazione luce ambientale»: il programma compila la luce della stanza e una luminanza del bianco adatta. Puoi saltare questo passo e scrivere tu la luminanza.",
+ "6a80ee6c": "Illuminamento della stanza usato per adattare la curva di tono. Lo compila il pulsante «Avvia misurazione luce ambientale».",
+ "b3652c22": "Sonda sulla scrivania con il diffusore sopra l'ottica. Misura la luce della stanza e propone la luminanza del bianco adatta. Puoi saltarla e scrivere tu la luminanza qui sotto.",
+ "bcf8c97c": "Avvia misurazione luce ambientale"
 }
