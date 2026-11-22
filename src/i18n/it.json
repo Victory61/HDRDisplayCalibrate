@@ -625,5 +625,21 @@
  "6105b723": "ruota il diffusore bianco sopra l'ottica",
  "7908fac3": "Verifica alla fine ({0} patch)",
  "093d352c": "Mentre la sonda è sullo schermo non compare nessun messaggio: il programma esegue da solo le fasi (grigi, profilo, verifica) e mostra l'avanzamento in basso nella schermata di misura.",
- "740b85ed": "Il diffusore della sonda copre l'ottica: ruotalo di lato (ottica scoperta), rimetti la sonda al centro dello schermo e ricomincia."
+ "740b85ed": "Il diffusore della sonda copre l'ottica: ruotalo di lato (ottica scoperta), rimetti la sonda al centro dello schermo e ricomincia.",
+ "b57f42a9": "circa {0:F0} minuti",
+ "4d064726": "Avanzata",
+ "da25cb52": "Alla fine il programma dice che puoi togliere la sonda, imposta il nuovo profilo come predefinito per questo schermo, salva il report e mostra un riepilogo. Dopo non cambiare la luminosità dello schermo.",
+ "964fd411": "Costruzione del profilo in corso: può richiedere alcuni minuti. Non spostare la sonda.",
+ "6622527c": "Scegli gli obiettivi e la modalità qui sotto e premi Avvia calibrazione: il programma chiede il nome del profilo e dove salvare il report. La modalità Standard (come Calibrite PROFILER) dura circa 20 minuti; accanto a ogni modalità sono indicati patch e tempo. Esc interrompe in qualsiasi momento.",
+ "645ab678": "Massima (lenta)",
+ "9e1fbc1c": "Misurazione luce ambientale",
+ "44f83158": "Apri il report",
+ "ced814cd": "Facoltativo, prima di mettere la sonda sullo schermo: misura la luce della stanza. Appoggia la sonda sulla scrivania accanto allo schermo, con il diffusore sopra l'ottica, e premi «Misurazione luce ambientale»: il programma compila la luce della stanza e una luminanza del bianco adatta. Puoi saltare questo passo e scrivere tu la luminanza.",
+ "f5f93eaa": "Report salvato: ",
+ "c92c6d01": "Illuminamento della stanza usato per adattare la curva di tono. Lo compila il pulsante «Misurazione luce ambientale».",
+ "b91ca976": "Standard (come Calibrite PROFILER)",
+ "be487b51": "Standard usa il set di patch standard di Calibrite PROFILER (119 patch); Avanzata e Massima i suoi set più grandi (211 e 461) e calibrano la scala di grigi in modo più fine.",
+ "6110eee0": "Non è stato possibile salvare il report: usa Esporta report nella pagina Verifica e report.",
+ "015e2ef4": "{0} patch per il profilo",
+ "9a4df721": "{0} patch per il profilo + {1} per la verifica"
 }
